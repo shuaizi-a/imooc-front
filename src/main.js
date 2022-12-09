@@ -1,5 +1,8 @@
-import { createApp } from 'vue'
-import App from './App.vue';
-import './styles/index.scss';
+import { createApp } from "vue";
+import App from "./App.vue";
+import router from "./router";
+import { useREM } from "./utils/flexible";
+import "./styles/index.scss";
 
-createApp(App).mount('#app')
+useREM();
+createApp(App).use(router).mount("#app");
