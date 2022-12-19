@@ -7,6 +7,7 @@
       <!-- 汉堡按钮 -->
       <li
         class="z-20 fixed top-0 right-[-1px] h-4 px-1 flex items-center bg-white shadow-l-white"
+        @click="isOpenPopup = !isOpenPopup"
       >
         <m-svg-icon class="w-1.5 h-1.5" name="hamburger"></m-svg-icon>
       </li>
@@ -30,12 +31,18 @@
         {{ item.name }}
       </li>
     </ul>
+
+    <m-popup v-model="isOpenPopup">
+      <menu-vue :categorys="data" @onItemClick="onItemClick"></menu-vue>
+    </m-popup>
   </div>
 </template>
 
 <script setup>
 import { ref, onBeforeUpdate, watch } from "vue";
 import { useScroll } from "@vueuse/core";
+import menuVue from "../../menu/index.vue";
+
 defineProps({
   data: {
     type: Array,
@@ -48,6 +55,9 @@ const sliderStyle = ref({
   transform: "translateX(0px)",
   width: "52px",
 });
+
+// popup 展示
+const isOpenPopup = ref(false);
 
 // 选中的 item 下标
 const currentCategoryIndex = ref(0);
@@ -66,16 +76,30 @@ onBeforeUpdate(() => {
 // 获取 ul 元素，以计算偏移位置
 const ulTarget = ref(null);
 const { x: ulScrollLeft } = useScroll(ulTarget);
-watch(currentCategoryIndex, (val) => {
-  // 获取选中元素的 left、width
-  const { left, width } = itemRefs[val].getBoundingClientRect();
-  // 为 sliderStyle 设置属性
+// 4.watch 监听
+watch(currentCategoryIndex, (value) => {
+  const { left, width } = itemRefs[value].getBoundingClientRect();
+  // 这里可以用 getComputedStyle 获取ul的padding
+  let ulPadding = getComputedStyle(ulTarget.value, null).padding.slice(0, -2); // 这里因为这种方法获取的是 8px 这个带有px的字符串
+  ulPadding = parseInt(ulPadding);
   sliderStyle.value = {
-    // ul 横向滚动位置 + 当前元素的 left 偏移量
-    transform: `translateX(${ulScrollLeft.value + left - 10 + "px"})`,
+    // 滑块位置 = ul横向滚动的位置 + 当前元素相对于视口的left - ul的padding
+    transform: `translateX(${ulScrollLeft.value + left - ulPadding}px)`,
     width: width + "px",
   };
+  console.log(ulTarget.value.scrollLeft);
+  /**
+   * 在弹出框打开时，说明这是由点击弹出框菜单触发的tab切换
+   * 1.关闭弹出框
+   * 2.在navigation点击较为靠后的菜单item时，需要让顶上的tab滚动相应的距离，
+   *  不然就会让滑块看不见了（点击navigation显示以外的目录，滚动条不会自动滚到那里）
+   */
+  if (isOpenPopup.value) {
+    isOpenPopup.value = false;
+    ulTarget.value.scrollLeft = left + ulTarget.value.scrollLeft;
+  }
 });
+
 // item 点击事件
 const onItemClick = (index) => {
   currentCategoryIndex.value = index;

@@ -1,6 +1,6 @@
 <template>
   <mobile-navigation-vue v-if="isMobileTerminal" :data="categoryData" />
-  <pc-navigation-vue v-else />
+  <pc-navigation-vue v-else :data="categoryData" />
 </template>
 
 <script setup>
